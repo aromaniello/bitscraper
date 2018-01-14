@@ -32,6 +32,9 @@ gem 'jbuilder', '~> 2.5'
 
 gem 'nokogiri', '~> 1.8.1'
 gem 'mechanize', '~> 2.7.5'
+gem 'amatch', '~> 0.4.0'
+
+gem 'whenever', require: false
 
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
