@@ -1,0 +1,2 @@
+class BitcointalkUsersController < ApplicationController
+end
