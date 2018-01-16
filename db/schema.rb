@@ -24,7 +24,7 @@ ActiveRecord::Schema.define(version: 20180114014118) do
 
   create_table "twitter_reports", force: :cascade do |t|
     t.bigint "bitcointalk_user_id"
-    t.datetime "last_edited"
+    t.datetime "post_date"
     t.integer "week"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

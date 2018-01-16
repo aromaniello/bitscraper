@@ -1,0 +1,43 @@
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">id</th>
+      <th scope="col">bitcointalk username</th>
+      <th scope="col">twitter user url</th>
+      <th scope="col">status count</th>
+      <th scope="col">most recent status update</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row"><%= @bitcointalk_user.id %></th>
+      <td><%= link_to @bitcointalk_user.username, @bitcointalk_user %></td>
+      <td><%= shorten_twitter_link @bitcointalk_user.twitter_user_url %></td>
+      <td><%= @bitcointalk_user.status_count %></td>
+      <td><%= most_recent_status(@bitcointalk_user) %></td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">id</th>
+      <th scope="col">week</th>
+      <th scope="col">status url</th>
+      <th scope="col">post date</th>
+      <th scope="col">parse date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @bitcointalk_user.twitter_statuses.each do |twitter_status| %>
+      <tr>
+        <th scope="row"><%= twitter_status.id %></th>
+        <td><%= twitter_status.week %></td>
+        <td><%= shorten_twitter_link twitter_status.twitter_url %></td>
+        <td><%= twitter_status.post_date.strftime("%b %e, %Y %k:%M:%S") %></td>
+        <td><%= twitter_status.created_at.strftime("%b %e, %Y %k:%M:%S") %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
