@@ -1,19 +1,21 @@
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th scope="col">id</th>
-      <th scope="col">bitcointalk username</th>
-      <th scope="col">twitter user url</th>
-      <th scope="col">status count</th>
-      <th scope="col">most recent status update</th>
-    </tr>
-  </thead>
+<h1 class="display-4"><%= @bitcointalk_user.username %></h1>
+
+<table class="table">
   <tbody>
     <tr>
-      <th scope="row"><%= @bitcointalk_user.id %></th>
-      <td><%= link_to @bitcointalk_user.username, @bitcointalk_user %></td>
+      <th style="width:15%">id</th>
+      <td><%= @bitcointalk_user.id %></th>
+    </tr>
+    <tr>
+      <th>twitter user</th>
       <td><%= shorten_twitter_link @bitcointalk_user.twitter_user_url %></td>
+    </tr>
+    <tr>
+      <th>status count</th>
       <td><%= @bitcointalk_user.status_count %></td>
+    </tr>
+    <tr>
+      <th>most recent status</th>
       <td><%= most_recent_status(@bitcointalk_user) %></td>
     </tr>
   </tbody>
