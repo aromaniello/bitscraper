@@ -1,7 +1,7 @@
 class BitcointalkUsersController < ApplicationController
 
 	def index
-		@bitcointalk_users = BitcointalkUser.all
+		@bitcointalk_users = BitcointalkUser.paginate(page: params[:page], per_page: 50)
 	end
 
 	def show

@@ -15,6 +15,7 @@ gem 'coffee-rails', '~> 4.2'
 gem 'turbolinks', '~> 5'
 gem 'jbuilder', '~> 2.5'
 gem 'bootstrap', '~> 4.0.0.beta3'
+gem 'will_paginate', '~> 3.1.0'
 
 gem 'nokogiri', '~> 1.8.1'
 gem 'mechanize', '~> 2.7.5'
