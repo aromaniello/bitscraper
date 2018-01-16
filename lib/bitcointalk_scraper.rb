@@ -23,8 +23,7 @@ module BitcointalkScraper
 		max = page_links.map { |link| link.gsub("#{BASE_URL}.", '').to_i }.max
 
 		# iterate over all pages in this topic
-		#(start_from..max).step(20).each do |num|
-		(20..80).step(20).each do |num|
+		(start_from..max).step(20).each do |num|
 			url = "#{BASE_URL}.#{num}"
 
 			puts "parsing #{url}"
@@ -48,8 +47,8 @@ module BitcointalkScraper
 
 		page = scraper.get(url)
 
-		# get the parent tag for posts that contain "TWITTER REPORT"
-		posts = page.search('div.post').select { |post| post.inner_html.include?("TWITTER REPORT") }.map { |p| p.parent.parent }
+		# get the parent tag for posts that are twitter reports
+		posts = page.search('div.post').select { |post| is_twitter_report?(post.inner_html) }.map { |p| p.parent.parent }
 
 		twitter_reports = []
 
@@ -59,17 +58,24 @@ module BitcointalkScraper
 
 			post_content = post.css('div.post').inner_html
 
-			# skip this post if it's quoting another one
-			next if post_content.match("Quote from:")
-
 			# get the poster's bitcointalk username
 			twitter_report[:bitcointalk_user] = post.at_css('td.poster_info b a').inner_html
 
-			# get the post's last edit/creation date and parse it
+			# skip this post if it's quoting another one or is the first post
+			next if post_content.match("Quote from:") || twitter_report[:bitcointalk_user] == 'momopi'
+
+			# get the post's last edit/creation date
 			if post.at_css('span.edited')
-				twitter_report[:post_date] = DateTime.strptime(post.at_css('span.edited').inner_html, '%B %d, %Y, %I:%M:%S %p') # e.g. December 08, 2017, 06:57:16 PM
+				date_str = post.at_css('span.edited').inner_html
 			else
-				twitter_report[:post_date] = DateTime.strptime(post.at_css('div.subject').parent.at_css('.smalltext').inner_html, '%B %d, %Y, %I:%M:%S %p')
+				date_str = post.at_css('div.subject').parent.at_css('.smalltext').inner_html
+			end
+
+			# the date may simply read "Today" instead of displaying the whole date
+			if date_str.include? "Today"
+				twitter_report[:post_date] = DateTime.strptime(date_str.gsub("<b>Today</b> at ",''), '%I:%M:%S %p') # sets the date as today, and parses the time
+			else
+				twitter_report[:post_date] = DateTime.strptime(date_str, '%B %d, %Y, %I:%M:%S %p') # e.g. December 08, 2017, 06:57:16 PM
 			end
 
 			twitter_report[:status_links] = []
@@ -107,27 +113,39 @@ module BitcointalkScraper
 	def self.save_report(twitter_report)
 
 		unless user = BitcointalkUser.find_by(username: twitter_report[:bitcointalk_user])
+
 			user = BitcointalkUser.new(username: twitter_report[:bitcointalk_user])
+
+			# set the twitter user url if it exists and it's not already present
+			user.twitter_user_url = twitter_report[:twitter_user_url] if twitter_report[:twitter_user_url] && !user.twitter_user_url
+
+			user.save!
+
 		end
-
-		# set the twitter user url if it exists and it's not already present
-		user.twitter_user_url = twitter_report[:twitter_user_url] if twitter_report[:twitter_user_url] && !user.twitter_user_url
-
-		user.save!
 
 		# check if the report already exists, otherwise create it
 		unless report = user.twitter_reports.where(post_date: twitter_report[:post_date]).first
+
 			report = user.twitter_reports.build(post_date: twitter_report[:post_date])
-		end
 
-		# set the week if it exists and is not already present
-		report.week = twitter_report[:week] if twitter_report[:week] && !report.week
+			# set the week if it exists and is not already present
+			report.week = twitter_report[:week] if twitter_report[:week] && !report.week
 
-		report.save!
+			report.save!
 
-		twitter_report[:status_links].each_with_index do |status_link, index|
-			report.twitter_statuses.create!(twitter_url: status_link, status_index: index)
+			# create all twitter statuses unless they already exist in the report
+			twitter_report[:status_links].each_with_index do |status_link, index|
+				unless report.twitter_statuses.find_by(twitter_url: status_link)
+					report.twitter_statuses.create!(twitter_url: status_link, status_index: index)
+				end
+			end
 		end
 	end
 
+	# Check if the post is a twitter report
+	# Params:
+	# +post_html+:: a string with the html contents of the post
+	def self.is_twitter_report?(post_html)
+		post_html.include?("TWITTER REPORT") || post_html.match(TWITTER_STATUS_URL)
+	end
 end
