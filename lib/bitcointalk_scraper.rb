@@ -7,10 +7,21 @@ module BitcointalkScraper
 	TWITTER_USER_MOBILE_URL = /https:\/\/mobile.twitter.com\/\w+/
 	TWITTER_STATUS_URL = /https:\/\/twitter.com\/\w+\/status\/\w+/
 
-	# Scrape all pages in this topic
+	# Scrape all pages and save
+	def self.scrape_all_and_save
+		scrape_and_save(0)
+	end
+
+	# Scrape only new pages and save
+	def self.scrape_new_and_save
+		last_scraped_page = TwitterReport.pluck(:page_number).to_a.compact.max
+		scrape_and_save(last_scraped_page)
+	end
+
+	# Scrape all pages in this topic starting from a specific page, and save them to the db
 	# Params:
 	# +start_from+:: optional page where to start scraping (defaults to 0)
-	def self.scrape_and_save(start_from = 0)
+	def self.scrape_and_save(start_from)
 
 		scraper = Mechanize.new
 
@@ -29,7 +40,7 @@ module BitcointalkScraper
 			puts "parsing #{url}"
 
 			# scrape this page and return an array of twitter reports
-			twitter_reports = scrape_page(url, scraper)
+			twitter_reports = scrape_page(url, scraper, num)
 
 			# save these reports to the database
 			twitter_reports.map { |twitter_report| save_report(twitter_report) }
@@ -43,7 +54,7 @@ module BitcointalkScraper
 	# Params:
 	# +url+:: the url of the page to be scraped
 	# +scraper+:: the mechanize object used for scraping
-	def self.scrape_page(url, scraper)
+	def self.scrape_page(url, scraper, page_number)
 
 		page = scraper.get(url)
 
@@ -101,13 +112,15 @@ module BitcointalkScraper
 				twitter_report[:week] = week_matcher.captures[0].to_i
 			end
 
+			twitter_report[:page_number] = page_number
+
 			twitter_reports << twitter_report
 		end
 
 		twitter_reports
 	end	
 
-	# Save a scraped twitter report to the database, and create the user if it doesn't already exist
+	# Save a scraped twitter report to the database, only if it doesn't already exist
 	# Params:
 	# +twitter_report+:: a hash with the data to create a twitter report
 	def self.save_report(twitter_report)
@@ -124,12 +137,15 @@ module BitcointalkScraper
 		end
 
 		# check if the report already exists, otherwise create it
-		unless report = user.twitter_reports.where(post_date: twitter_report[:post_date]).first
+		unless user.twitter_reports.where(post_date: twitter_report[:post_date]).first
 
 			report = user.twitter_reports.build(post_date: twitter_report[:post_date])
 
 			# set the week if it exists and is not already present
 			report.week = twitter_report[:week] if twitter_report[:week] && !report.week
+
+			# save the page number where this report was found
+			report.page_number = twitter_report[:page_number]
 
 			report.save!
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180114014118) do
+ActiveRecord::Schema.define(version: 20180117025655) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -28,6 +28,7 @@ ActiveRecord::Schema.define(version: 20180114014118) do
     t.integer "week"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "page_number"
     t.index ["bitcointalk_user_id"], name: "index_twitter_reports_on_bitcointalk_user_id"
   end
 
